@@ -20,9 +20,9 @@ type Article struct {
 	Tags        []string           `json:"tags" bson:"tags"`
 	Featured    bool               `json:"featured" bson:"featured"`
 	Views       int                `json:"views" bson:"views"`
+	CreatedAt   time.Time          `json:"createdAt" bson:"createdAt"`
+	UpdatedAt   time.Time          `json:"updatedAt" bson:"updatedAt"`
 }
-
-// Struct untuk TrendingItem disesuaikan untuk MongoDB
 type TrendingItem struct {
 	ID          primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Title       string             `json:"title" bson:"title"`
@@ -31,8 +31,6 @@ type TrendingItem struct {
 	Category    string             `json:"category" bson:"category"`
 	PublishedAt time.Time          `json:"publishedAt" bson:"publishedAt"`
 }
-
-// Struct untuk Event disesuaikan untuk MongoDB
 type Event struct {
 	ID          primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Title       string             `json:"title" bson:"title"`
@@ -42,4 +40,10 @@ type Event struct {
 	Category    string             `json:"category" bson:"category"`
 	Description string             `json:"description" bson:"description"`
 	ImageURL    string             `json:"imageUrl" bson:"imageUrl"`
+}
+
+type User struct {
+	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Username string             `json:"username" bson:"username"`
+	Password string             `json:"-" bson:"password"` // Jangan pernah kirim password ke client
 }

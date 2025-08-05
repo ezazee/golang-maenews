@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"maenews/backend/data"
+	"maenews/backend/models"
+	"maenews/backend/utils"
 	"net/http"
 	"strings"
 
@@ -82,4 +84,42 @@ func SearchArticlesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJSON(w, http.StatusOK, articles)
+}
+
+func CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
+	var article models.Article
+	if err := json.NewDecoder(r.Body).Decode(&article); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	createdArticle, err := data.CreateArticle(article)
+	if err != nil {
+		http.Error(w, "Failed to create article", http.StatusInternalServerError)
+		return
+	}
+	utils.RespondWithJSON(w, http.StatusCreated, createdArticle)
+}
+
+func UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	var article models.Article
+	if err := json.NewDecoder(r.Body).Decode(&article); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	updatedArticle, err := data.UpdateArticleBySlug(slug, article)
+	if err != nil {
+		http.Error(w, "Failed to update article", http.StatusInternalServerError)
+		return
+	}
+	utils.RespondWithJSON(w, http.StatusOK, updatedArticle)
+}
+
+func DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	if err := data.DeleteArticleBySlug(slug); err != nil {
+		http.Error(w, "Failed to delete article", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"maenews/backend/database"
 	"maenews/backend/models"
+	"maenews/backend/utils"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -128,4 +129,61 @@ func SearchArticles(query string) ([]models.Article, error) {
 	}
 
 	return articles, nil
+}
+
+func CreateArticle(article models.Article) (models.Article, error) {
+	articleCollection := database.GetCollection("articles")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	article.ID = primitive.NewObjectID()
+	article.Slug = utils.Slugify(article.Title)
+	article.CreatedAt = time.Now()
+	article.UpdatedAt = time.Now()
+	// ... set nilai default lain jika perlu
+
+	_, err := articleCollection.InsertOne(ctx, article)
+	return article, err
+}
+
+func UpdateArticleBySlug(slug string, article models.Article) (models.Article, error) {
+	articleCollection := database.GetCollection("articles")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	update := bson.M{
+		"$set": bson.M{
+			"title":       article.Title,
+			"slug":        utils.Slugify(article.Title),
+			"description": article.Description,
+			"excerpt":     article.Excerpt,
+			"category":    article.Category,
+			"author":      article.Author,
+			"imageUrl":    article.ImageURL,
+			"tags":        article.Tags,
+			"featured":    article.Featured,
+			"updatedAt":   time.Now(),
+		},
+	}
+
+	filter := bson.M{"slug": slug}
+	_, err := articleCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return models.Article{}, err
+	}
+
+	// Ambil kembali data yang sudah diupdate
+	var updatedArticle models.Article
+	err = articleCollection.FindOne(ctx, bson.M{"slug": utils.Slugify(article.Title)}).Decode(&updatedArticle)
+	return updatedArticle, err
+}
+
+func DeleteArticleBySlug(slug string) error {
+	articleCollection := database.GetCollection("articles")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{"slug": slug}
+	_, err := articleCollection.DeleteOne(ctx, filter)
+	return err
 }
