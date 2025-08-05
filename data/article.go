@@ -1,0 +1,131 @@
+package data
+
+import (
+	"context"
+	"maenews/backend/database"
+	"maenews/backend/models"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+// PERBAIKAN: Variabel global dihapus. Koleksi akan diambil di dalam setiap fungsi.
+
+// GetAllArticles sekarang mengambil data dari MongoDB
+func GetAllArticles() ([]models.Article, error) {
+	articleCollection := database.GetCollection("articles")
+	var articles []models.Article
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := articleCollection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &articles); err != nil {
+		return nil, err
+	}
+
+	return articles, nil
+}
+
+func GetArticleBySlug(slug string) (models.Article, error) {
+	articleCollection := database.GetCollection("articles")
+	var article models.Article
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Mencari berdasarkan field 'slug'
+	err := articleCollection.FindOne(ctx, bson.M{"slug": slug}).Decode(&article)
+	if err != nil {
+		return models.Article{}, err
+	}
+
+	return article, nil
+}
+
+// GetArticlesByCategory mengambil data dari MongoDB
+func GetArticlesByCategory(categoryName string) ([]models.Article, error) {
+	articleCollection := database.GetCollection("articles")
+	var articles []models.Article
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{"category": bson.M{"$regex": primitive.Regex{Pattern: "^" + categoryName + "$", Options: "i"}}}
+	cursor, err := articleCollection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &articles); err != nil {
+		return nil, err
+	}
+
+	return articles, nil
+}
+
+// GetArticlesByTag mengambil data dari MongoDB
+func GetArticlesByTag(tagName string) ([]models.Article, error) {
+	articleCollection := database.GetCollection("articles")
+	var articles []models.Article
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{"tags": bson.M{"$regex": primitive.Regex{Pattern: "^" + tagName + "$", Options: "i"}}}
+	cursor, err := articleCollection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &articles); err != nil {
+		return nil, err
+	}
+
+	return articles, nil
+}
+
+func IncrementArticleView(slug string) error {
+	articleCollection := database.GetCollection("articles")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"slug": slug}
+	update := bson.M{"$inc": bson.M{"views": 1}}
+
+	_, err := articleCollection.UpdateOne(ctx, filter, update)
+	return err
+}
+
+func SearchArticles(query string) ([]models.Article, error) {
+	articleCollection := database.GetCollection("articles")
+	var articles []models.Article
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Membuat filter regex untuk pencarian case-insensitive di beberapa field
+	filter := bson.M{
+		"$or": []bson.M{
+			{"title": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+			{"excerpt": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+			{"description": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+			{"tags": bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}},
+		},
+	}
+
+	cursor, err := articleCollection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &articles); err != nil {
+		return nil, err
+	}
+
+	return articles, nil
+}
