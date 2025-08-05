@@ -10,15 +10,15 @@ import (
 var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
 type Claims struct {
-	Username string `json:"username"`
+	Email string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 // GenerateJWT membuat token baru untuk pengguna
-func GenerateJWT(username string) (string, error) {
+func GenerateJWT(email string) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour) // Token berlaku 24 jam
 	claims := &Claims{
-		Username: username,
+		Email: email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},

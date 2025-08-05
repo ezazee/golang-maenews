@@ -32,13 +32,12 @@ func CreateUser(user models.User) (models.User, error) {
 	return user, nil
 }
 
-// GetUserByUsername mengambil pengguna berdasarkan username
-func GetUserByUsername(username string) (models.User, error) {
+func GetUserByEmail(email string) (models.User, error) {
 	userCollection := database.GetCollection("users")
 	var user models.User
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := userCollection.FindOne(ctx, bson.M{"username": username}).Decode(&user)
+	err := userCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	return user, err
 }

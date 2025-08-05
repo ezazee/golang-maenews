@@ -23,8 +23,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Menyimpan username di context untuk bisa digunakan di handler selanjutnya
-		ctx := context.WithValue(r.Context(), "username", claims.Username)
+		ctx := context.WithValue(r.Context(), "email", claims.Email)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

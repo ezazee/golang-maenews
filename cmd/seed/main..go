@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"maenews/backend/data"
 	"maenews/backend/database"
 	"maenews/backend/models"
 	"math/rand"
@@ -36,6 +37,7 @@ func main() {
 	clearCollections()
 
 	// Seed data baru
+	seedAdminUser() // Menambahkan seeder untuk user admin
 	seedArticles()
 	seedTrendingItems()
 	seedUpcomingEvents()
@@ -45,9 +47,27 @@ func main() {
 
 func clearCollections() {
 	fmt.Println("Clearing old data...")
+	database.GetCollection("users").DeleteMany(context.Background(), primitive.M{}) // Menambahkan users
 	database.GetCollection("articles").DeleteMany(context.Background(), primitive.M{})
 	database.GetCollection("trending_items").DeleteMany(context.Background(), primitive.M{})
 	database.GetCollection("upcoming_events").DeleteMany(context.Background(), primitive.M{})
+}
+
+// FUNGSI BARU: Untuk membuat user admin
+func seedAdminUser() {
+	fmt.Println("Seeding admin user...")
+
+	adminUser := models.User{
+		Email:    "admin@maenews.com",
+		Password: "passwordyangaman",
+	}
+
+	// Memanggil fungsi CreateUser yang sudah ada (yang akan meng-hash password)
+	_, err := data.CreateUser(adminUser)
+	if err != nil {
+		log.Fatalf("Failed to seed admin user: %v", err)
+	}
+	fmt.Println("Admin user created: admin@maenews.com")
 }
 
 func seedArticles() {
@@ -75,7 +95,7 @@ func seedArticles() {
 		title := titles[i%len(titles)]
 		article := models.Article{
 			Title:       title,
-			Slug:        slugify(title), // Menambahkan slug
+			Slug:        slugify(title),
 			Description: fmt.Sprintf("Ini adalah deskripsi lengkap untuk artikel '%s' yang membahas topik-topik terkini.", title),
 			Excerpt:     fmt.Sprintf("Kutipan singkat dari artikel '%s'...", title),
 			Category:    categories[i%len(categories)],
@@ -84,7 +104,7 @@ func seedArticles() {
 			ImageURL:    fmt.Sprintf("https://placehold.co/600x400/1E293B/FFFFFF?text=Artikel+%d", i+1),
 			Tags:        []string{categories[i%len(categories)], "Update"},
 			Featured:    i == 0,
-			Views:       rand.Intn(5000) + 100, // Menambahkan views acak
+			Views:       rand.Intn(5000) + 100,
 		}
 		articlesToSeed = append(articlesToSeed, article)
 	}
@@ -96,11 +116,10 @@ func seedArticles() {
 }
 
 func seedTrendingItems() {
-	fmt.Println("Seeding trending items...")
+	fmt.Println("Seeding trending items (legacy)...")
 	trendingCollection := database.GetCollection("trending_items")
 	var itemsToSeed []interface{}
 
-	// Menggunakan judul dari artikel yang ada agar lebih realistis
 	titles := []string{
 		"Demon Slayer Season 4 Dikonfirmasi", "Content Creator Terbaru dari Hololive",
 		"Anime Festival Asia 2025", "Update Besar Genshin Impact",
@@ -108,7 +127,7 @@ func seedTrendingItems() {
 	}
 	categories := []string{"Anime", "Gaming", "Event", "Content Creator"}
 
-	for i := 1; i <= 20; i++ {
+	for i := 1; i <= 5; i++ {
 		title := titles[i%len(titles)]
 		item := models.TrendingItem{
 			Title:       fmt.Sprintf("%s #%d", title, i),
@@ -133,11 +152,11 @@ func seedUpcomingEvents() {
 	locations := []string{"JCC, Jakarta", "ICE BSD, Tangerang", "Balai Kartini", "JIExpo Kemayoran"}
 	eventNames := []string{"Pop Culture Fest", "Anime Convention", "Gaming Expo", "Cosplay Gathering"}
 
-	for i := 1; i <= 20; i++ {
+	for i := 1; i <= 5; i++ {
 		title := fmt.Sprintf("%s %d", eventNames[i%len(eventNames)], 2025+i/4)
 		event := models.Event{
 			Title:       title,
-			Slug:        slugify(title), // PERBAIKAN: Membuat slug dari judul
+			Slug:        slugify(title),
 			Location:    locations[i%len(locations)],
 			Date:        time.Now().AddDate(0, 1, i*10),
 			Category:    "Convention",

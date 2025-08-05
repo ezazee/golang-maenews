@@ -11,7 +11,7 @@ import (
 )
 
 type Credentials struct {
-	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -22,7 +22,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := data.CreateUser(models.User{Username: creds.Username, Password: creds.Password})
+	user, err := data.CreateUser(models.User{Email: creds.Email, Password: creds.Password})
 	if err != nil {
 		http.Error(w, "Could not create user", http.StatusInternalServerError)
 		return
@@ -37,7 +37,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := data.GetUserByUsername(creds.Username)
+	user, err := data.GetUserByEmail(creds.Email)
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
@@ -48,7 +48,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.GenerateJWT(user.Username)
+	token, err := auth.GenerateJWT(user.Email)
 	if err != nil {
 		http.Error(w, "Could not generate token", http.StatusInternalServerError)
 		return

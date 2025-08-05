@@ -44,6 +44,6 @@ type Event struct {
 
 type User struct {
 	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Username string             `json:"username" bson:"username"`
-	Password string             `json:"-" bson:"password"` // Jangan pernah kirim password ke client
+	Email    string             `json:"email" bson:"email"`
+	Password string             `json:"-" bson:"password"`
 }
