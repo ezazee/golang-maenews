@@ -19,6 +19,7 @@ type Article struct {
 	ImageURL    string             `json:"imageUrl" bson:"imageUrl"`
 	Tags        []string           `json:"tags" bson:"tags"`
 	Featured    bool               `json:"featured" bson:"featured"`
+	Status      string             `json:"status" bson:"status"`
 	Views       int                `json:"views" bson:"views"`
 	CreatedAt   time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt   time.Time          `json:"updatedAt" bson:"updatedAt"`
@@ -46,4 +47,14 @@ type User struct {
 	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Email    string             `json:"email" bson:"email"`
 	Password string             `json:"-" bson:"password"`
+}
+
+type PaginationData struct {
+	CurrentPage int `json:"currentPage"`
+	TotalPages  int `json:"totalPages"`
+}
+
+type PaginatedArticleResponse struct {
+	Data       []Article      `json:"data"`
+	Pagination PaginationData `json:"pagination"`
 }

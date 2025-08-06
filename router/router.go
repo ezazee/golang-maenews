@@ -2,7 +2,7 @@ package router
 
 import (
 	"maenews/backend/handlers"
-	auth "maenews/backend/middleware"
+	auth "maenews/backend/middleware" // Memberi nama alias 'auth' pada middleware kustom
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -37,6 +37,8 @@ func SetupRouter() http.Handler {
 		r.Get("/search/{query}", handlers.SearchArticlesHandler)
 		r.Get("/trending", handlers.GetTrendingItemsHandler)
 		r.Get("/events/upcoming", handlers.GetUpcomingEventsHandler)
+
+		// PERBAIKAN: Memastikan rute untuk mengambil detail satu event sudah ada
 		r.Get("/events/{slug}", handlers.GetEventBySlugHandler)
 	})
 
@@ -55,6 +57,8 @@ func SetupRouter() http.Handler {
 
 		// Rute CRUD untuk Event
 		r.Post("/events", handlers.CreateEventHandler)
+		r.Put("/events/{slug}", handlers.UpdateEventHandler)
+		r.Delete("/events/{slug}", handlers.DeleteEventHandler)
 	})
 
 	return r

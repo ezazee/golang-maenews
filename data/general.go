@@ -47,14 +47,14 @@ func GetUpcomingEvents() ([]models.Event, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 1. Filter: Hanya ambil acara yang tanggalnya lebih besar atau sama dengan hari ini
-	// Kita set waktu ke awal hari untuk memastikan acara hari ini tetap muncul
 	today := time.Now()
 	startOfDay := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
 	filter := bson.M{"date": bson.M{"$gte": startOfDay}}
 
-	// 2. Opsi: Urutkan berdasarkan tanggal (ascending), jadi yang terdekat muncul pertama
-	opts := options.Find().SetSort(bson.D{{Key: "date", Value: 1}})
+	opts := options.Find().SetSort(bson.D{
+		{Key: "date", Value: 1},
+		{Key: "_id", Value: 1},
+	})
 
 	cursor, err := eventCollection.Find(ctx, filter, opts)
 	if err != nil {

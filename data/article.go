@@ -5,32 +5,63 @@ import (
 	"maenews/backend/database"
 	"maenews/backend/models"
 	"maenews/backend/utils"
+	"math"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // PERBAIKAN: Variabel global dihapus. Koleksi akan diambil di dalam setiap fungsi.
 
 // GetAllArticles sekarang mengambil data dari MongoDB
-func GetAllArticles() ([]models.Article, error) {
+func GetAllArticles(page, limit int) (models.PaginatedArticleResponse, error) {
 	articleCollection := database.GetCollection("articles")
-	var articles []models.Article
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := articleCollection.Find(ctx, bson.M{})
+	// 1. Hitung total dokumen untuk menentukan total halaman
+	totalDocuments, err := articleCollection.CountDocuments(ctx, bson.M{})
 	if err != nil {
-		return nil, err
+		return models.PaginatedArticleResponse{}, err
+	}
+
+	// 2. Hitung total halaman
+	totalPages := int(math.Ceil(float64(totalDocuments) / float64(limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	// 3. Siapkan opsi untuk query: skip (lewatkan) dan limit (batasi)
+	skip := (page - 1) * limit
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(skip))
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSort(bson.D{{Key: "publishedAt", Value: -1}}) // Urutkan dari yang terbaru
+
+	// 4. Lakukan query untuk mendapatkan artikel di halaman saat ini
+	var articles []models.Article
+	cursor, err := articleCollection.Find(ctx, bson.M{}, findOptions)
+	if err != nil {
+		return models.PaginatedArticleResponse{}, err
 	}
 	defer cursor.Close(ctx)
 
 	if err = cursor.All(ctx, &articles); err != nil {
-		return nil, err
+		return models.PaginatedArticleResponse{}, err
 	}
 
-	return articles, nil
+	// 5. Buat struktur respons lengkap
+	response := models.PaginatedArticleResponse{
+		Data: articles,
+		Pagination: models.PaginationData{
+			CurrentPage: page,
+			TotalPages:  totalPages,
+		},
+	}
+
+	return response, nil
 }
 
 func GetArticleBySlug(slug string) (models.Article, error) {

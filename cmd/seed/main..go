@@ -24,50 +24,43 @@ func slugify(s string) string {
 }
 
 func main() {
-	// Memuat .env dari direktori root proyek
 	if err := godotenv.Load("../../.env"); err != nil {
 		log.Fatal("Error loading .env file from root directory")
 	}
-
 	database.ConnectDB()
-
 	fmt.Println("Seeding database...")
-
-	// Hapus data lama
 	clearCollections()
-
-	// Seed data baru
-	seedAdminUser() // Menambahkan seeder untuk user admin
+	seedAdminUser()
 	seedArticles()
 	seedTrendingItems()
 	seedUpcomingEvents()
-
 	fmt.Println("Database seeding completed successfully!")
 }
 
 func clearCollections() {
 	fmt.Println("Clearing old data...")
-	database.GetCollection("users").DeleteMany(context.Background(), primitive.M{}) // Menambahkan users
+	database.GetCollection("users").DeleteMany(context.Background(), primitive.M{})
 	database.GetCollection("articles").DeleteMany(context.Background(), primitive.M{})
 	database.GetCollection("trending_items").DeleteMany(context.Background(), primitive.M{})
 	database.GetCollection("upcoming_events").DeleteMany(context.Background(), primitive.M{})
 }
 
-// FUNGSI BARU: Untuk membuat user admin
 func seedAdminUser() {
 	fmt.Println("Seeding admin user...")
-
 	adminUser := models.User{
 		Email:    "admin@maenews.com",
 		Password: "passwordyangaman",
 	}
-
-	// Memanggil fungsi CreateUser yang sudah ada (yang akan meng-hash password)
 	_, err := data.CreateUser(adminUser)
 	if err != nil {
-		log.Fatalf("Failed to seed admin user: %v", err)
+		if strings.Contains(err.Error(), "duplicate key error") {
+			fmt.Println("Admin user already exists.")
+		} else {
+			log.Fatalf("Failed to seed admin user: %v", err)
+		}
+	} else {
+		fmt.Println("Admin user created successfully: admin@maenews.com")
 	}
-	fmt.Println("Admin user created: admin@maenews.com")
 }
 
 func seedArticles() {
@@ -90,13 +83,14 @@ func seedArticles() {
 
 	categories := []string{"Anime", "Gaming", "Cosplay", "Event", "Content Creator"}
 	authors := []string{"Admin", "Redaksi", "Tim Reporter", "Gaming Desk", "Cosplay News"}
+	statuses := []string{"Published", "Published", "Published", "Draft"} // Mayoritas Published
 
 	for i := 0; i < 20; i++ {
 		title := titles[i%len(titles)]
 		article := models.Article{
 			Title:       title,
 			Slug:        slugify(title),
-			Description: fmt.Sprintf("Ini adalah deskripsi lengkap untuk artikel '%s' yang membahas topik-topik terkini.", title),
+			Description: fmt.Sprintf("Ini adalah deskripsi lengkap untuk artikel '%s'.", title),
 			Excerpt:     fmt.Sprintf("Kutipan singkat dari artikel '%s'...", title),
 			Category:    categories[i%len(categories)],
 			Author:      authors[i%len(authors)],
@@ -105,6 +99,9 @@ func seedArticles() {
 			Tags:        []string{categories[i%len(categories)], "Update"},
 			Featured:    i == 0,
 			Views:       rand.Intn(5000) + 100,
+			Status:      statuses[i%len(statuses)],
+			CreatedAt:   time.Now().AddDate(0, 0, -i),
+			UpdatedAt:   time.Now().AddDate(0, 0, -i),
 		}
 		articlesToSeed = append(articlesToSeed, article)
 	}
@@ -122,8 +119,6 @@ func seedTrendingItems() {
 
 	titles := []string{
 		"Demon Slayer Season 4 Dikonfirmasi", "Content Creator Terbaru dari Hololive",
-		"Anime Festival Asia 2025", "Update Besar Genshin Impact",
-		"Film Live Action 'One Piece' Season 2 Mulai Syuting",
 	}
 	categories := []string{"Anime", "Gaming", "Event", "Content Creator"}
 
@@ -149,16 +144,17 @@ func seedUpcomingEvents() {
 	eventCollection := database.GetCollection("upcoming_events")
 	var eventsToSeed []interface{}
 
-	locations := []string{"JCC, Jakarta", "ICE BSD, Tangerang", "Balai Kartini", "JIExpo Kemayoran"}
-	eventNames := []string{"Pop Culture Fest", "Anime Convention", "Gaming Expo", "Cosplay Gathering"}
+	locations := []string{"JCC, Jakarta", "ICE BSD, Tangerang", "Balai Kartini", "JIExpo Kemayoran", "Trans Studio, Bandung", "Pakuwon Mall, Surabaya"}
+	eventNames := []string{"Pop Culture Fest", "Anime Convention", "Gaming Expo", "Cosplay Gathering", "Comic Frontier", "Creators Super Fest"}
 
-	for i := 1; i <= 5; i++ {
-		title := fmt.Sprintf("%s %d", eventNames[i%len(eventNames)], 2025+i/4)
+	// PERBAIKAN: Loop diubah untuk membuat 30 data event
+	for i := 1; i <= 30; i++ {
+		title := fmt.Sprintf("%s %d", eventNames[i%len(eventNames)], 2025+i/6)
 		event := models.Event{
 			Title:       title,
 			Slug:        slugify(title),
 			Location:    locations[i%len(locations)],
-			Date:        time.Now().AddDate(0, 1, i*10),
+			Date:        time.Now().AddDate(0, 1, i*5), // Event di masa depan dengan jarak 5 hari
 			Category:    "Convention",
 			Description: fmt.Sprintf("Deskripsi untuk event pop culture ke-%d.", i),
 			ImageURL:    fmt.Sprintf("https://placehold.co/400x300/7C2D12/FFFFFF?text=Event+%d", i),

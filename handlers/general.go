@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"maenews/backend/data"
+	"maenews/backend/utils"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -14,7 +15,7 @@ func GetTrendingItemsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to fetch trending items", http.StatusInternalServerError)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, items)
+	utils.RespondWithJSON(w, http.StatusOK, items)
 }
 
 // PERBAIKAN: GetUpcomingEventsHandler sekarang menangani error dari database
@@ -24,7 +25,7 @@ func GetUpcomingEventsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to fetch upcoming events", http.StatusInternalServerError)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, events)
+	utils.RespondWithJSON(w, http.StatusOK, events)
 }
 
 func GetEventBySlugHandler(w http.ResponseWriter, r *http.Request) {
@@ -34,5 +35,5 @@ func GetEventBySlugHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Event not found", http.StatusNotFound)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, event)
+	utils.RespondWithJSON(w, http.StatusOK, event)
 }

@@ -6,6 +6,7 @@ import (
 	"maenews/backend/models"
 	"maenews/backend/utils"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -19,14 +20,30 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-// GetAllArticlesHandler sekarang menangani error dari database
 func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
-	articles, err := data.GetAllArticles()
+	// Baca query parameter 'page' dan 'limit' dari URL
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	// Konversi ke integer, dengan nilai default jika tidak ada
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 10 // Default 10 item per halaman
+	}
+
+	// Panggil fungsi data dengan parameter paginasi
+	paginatedResponse, err := data.GetAllArticles(page, limit)
 	if err != nil {
 		http.Error(w, "Failed to fetch articles", http.StatusInternalServerError)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, articles)
+
+	utils.RespondWithJSON(w, http.StatusOK, paginatedResponse)
 }
 
 // GetArticleByIDHandler sekarang menangani error dari database
